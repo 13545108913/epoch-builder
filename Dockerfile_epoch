@@ -34,40 +34,34 @@ ENV PATH="/home/gitlab/.asdf/bin:/home/gitlab/.asdf/shims:${PATH}"
 ENV ASDF_DIR="/home/gitlab/.asdf"
 ENV ASDF_DATA_DIR="/home/gitlab/.asdf"
 
+# 将 ASDF 初始化添加到 shell 配置
+RUN echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+
 # 步骤5：添加插件
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+RUN . $HOME/.asdf/asdf.sh && \
     asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
     asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
-    asdf plugin add yarn'
+    asdf plugin add yarn
 
 # 步骤6：利用Docker缓存。先只复制版本定义文件
 COPY --chown=gitlab:gitlab .tool-versions .
 
-# 步骤7：安装精确的运行时
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf install'
+# 步骤7：安装精确的运行时并设置全局版本
+RUN . $HOME/.asdf/asdf.sh && \
+    asdf install && \
+    asdf global ruby $(cat .tool-versions | grep ruby | cut -d' ' -f2) && \
+    asdf global nodejs $(cat .tool-versions | grep nodejs | cut -d' ' -f2) && \
+    asdf reshim
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
-# 在步骤10之前添加调试步骤
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    echo "=== Debugging ASDF environment ===" && \
-    echo "PATH: $PATH" && \
-    echo "Ruby version:" && asdf current ruby && \
-    echo "Node version:" && asdf current nodejs && \
-    which ruby && \
-    which gem && \
-    gem --version'
-
-# 步骤10：安装应用依赖
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf reshim ruby && \
+# 步骤9：安装应用依赖
+RUN . $HOME/.asdf/asdf.sh && \
     gem install bundler:2.3.6 && \
-    asdf reshim ruby && \
     bundle install && \
     yarn install --frozen-lockfile'
 
-# 步骤11：运行特定于应用的前端构建命令
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+# 步骤10：运行特定于应用的前端构建命令
+RUN . $HOME/.asdf/asdf.sh && \
     yarn run webpack-prod'
