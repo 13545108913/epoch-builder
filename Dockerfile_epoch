@@ -28,11 +28,8 @@ WORKDIR /home/gitlab
 
 # 步骤4：安装 ASDF 
 RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
-
-# 设置环境变量
-ENV PATH="/home/gitlab/.asdf/bin:/home/gitlab/.asdf/shims:${PATH}"
-ENV ASDF_DIR="/home/gitlab/.asdf"
-ENV ASDF_DATA_DIR="/home/gitlab/.asdf"
+RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
+    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
 
 # 步骤5：添加插件
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
@@ -47,40 +44,18 @@ COPY --chown=gitlab:gitlab .tool-versions .
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf install'
 
-# 
-# ⬇️⬇️⬇️ 在这里添加新步骤 ⬇️⬇️⬇️
-#
-# 新增步骤：设置全局版本
-# 这会读取 .tool-versions 文件并设置全局默认值，
-# 确保后续的 RUN 步骤能找到正确的 Ruby/NodeJS 版本。
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    echo "Setting global tool versions..." && \
-    asdf global ruby $(grep 'ruby' .tool-versions | awk '{print $2}') && \
-    asdf global nodejs $(grep 'nodejs' .tool-versions | awk '{print $2}') && \
-    echo "Global versions set:" && \
-    asdf current'
-# 
-# ⬆️⬆️⬆️ 添加新步骤完毕 ⬆️⬆️⬆️
-#
-
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
-# 在步骤10之前添加调试步骤
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    echo "=== Debugging ASDF environment ===" && \
-    echo "PATH: $PATH" && \
-    echo "Ruby version:" && asdf current ruby && \
-    echo "Node version:" && asdf current nodejs && \
-    which ruby && \
-    which gem && \
-    gem --version'
+# 步骤9：验证vendor目录是否存在
+# RUN echo "=== Checking vendor directory ===" && \
+#     ls -la vendor/ && \
+#     echo "=== Checking mail-smtp_pool ===" && \
+#     ls -la vendor/gems/mail-smtp_pool/
 
 # 步骤10：安装应用依赖
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf reshim ruby && \
     gem install bundler:2.3.6 && \
-    asdf reshim ruby && \
     bundle install && \
     yarn install --frozen-lockfile'
 

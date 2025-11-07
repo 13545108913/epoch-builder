@@ -86,18 +86,6 @@ jobs:
             cat .tool-versions
           fi
         shell: bash
-      
-      # --- 新增步骤：在构建前删除 .dockerignore ---
-      - name: 强制删除 .dockerignore (确保 vendor 等目录被复制)
-        run: |
-          DOCKERIGNORE_PATH="gitlab-src/.dockerignore"
-          if [ -f "$DOCKERIGNORE_PATH" ]; then
-            echo "Found .dockerignore at $DOCKERIGNORE_PATH. Removing it to ensure all files (like vendor/) are copied into the Docker build."
-            rm -f "$DOCKERIGNORE_PATH"
-          else
-            echo "No .dockerignore file found in gitlab-src, proceeding."
-          fi
-        shell: bash
 
       # --- 构建步骤（现在是安全的） ---
       - name: 构建并推送纪元镜像
