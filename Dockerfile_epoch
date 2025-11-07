@@ -28,8 +28,9 @@ WORKDIR /home/gitlab
 
 # 步骤4：安装 ASDF 
 RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
-RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
-    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
+# 修复：使用 printf 而不是 'echo -e'，因为 /bin/sh (dash) 不支持 -e
+RUN printf "\n. %s" "$HOME/.asdf/asdf.sh" >> ~/.bashrc && \
+    printf "\n. %s" "$HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
 
 # 步骤5：添加插件 (修复：使用 -lic 强制加载 .bashrc)
 RUN /bin/bash -lic 'asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
