@@ -29,7 +29,7 @@ jobs:
       - name: 检出目标版本的 GitLab 代码
         uses: actions/checkout@v4
         with:
-          repository: gitlab-org/gitlab-foss # 或 EE 仓库
+          repository: gitlabhq/gitlabhq # 或 EE 仓库
           ref: ${{ matrix.epoch_version }} # 检出矩阵中定义的特定 git 标签
           path: gitlab-src # **重要：** 检出到子目录 'gitlab-src'
           
