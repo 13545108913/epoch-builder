@@ -26,36 +26,48 @@ RUN useradd --create-home --shell /bin/bash gitlab && \
 USER gitlab
 WORKDIR /home/gitlab
 
-# 步骤4-11：在单个RUN命令中完成所有ASDF和依赖安装
-RUN set -x && \
-    # 安装 ASDF
-    git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2 && \
-    echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
-    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc && \
-    # 设置环境变量
-    export PATH="$HOME/.asdf/shims:$HOME/.asdf/bin:$PATH" && \
-    # Source asdf.sh
-    . $HOME/.asdf/asdf.sh && \
-    # 添加插件
+# 步骤4：安装 ASDF 
+RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
+RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
+    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
+
+# 步骤5：添加插件
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
     asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
-    asdf plugin add yarn && \
-    # 复制版本文件（在同一RUN步骤中）
-    if [ -f .tool-versions ]; then cat .tool-versions; else echo "Using manually created .tool-versions"; fi && \
-    # 安装运行时
+    asdf plugin add yarn'
+
+# 步骤6：利用Docker缓存。先只复制版本定义文件
+COPY --chown=gitlab:gitlab .tool-versions .
+
+# 步骤7：安装精确的运行时
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf install && \
-    asdf reshim && \
-    # 验证安装
-    echo "=== Ruby version ===" && \
-    ruby --version && \
-    echo "=== Node version ===" && \
-    node --version && \
-    echo "=== Yarn version ===" && \
-    yarn --version && \
-    # 安装 bundler
-    gem install bundler:2.3.6 && \
-    # 验证 gem 和 bundle 可用
-    echo "=== Gem list ===" && \
-    gem list && \
-    echo "=== Bundle version ===" && \
-    bundle version
+    asdf reshim'
+
+# 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
+COPY --chown=gitlab:gitlab . .
+
+# 步骤9：验证vendor目录是否存在
+# RUN echo "=== Checking vendor directory ===" && \
+#     ls -la vendor/ && \
+#     echo "=== Checking mail-smtp_pool ===" && \
+#     ls -la vendor/gems/mail-smtp_pool/
+
+# 步骤10：安装应用依赖
+# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+#     gem install bundler:2.3.6 && \
+#     bundle install && \
+#     yarn install --frozen-lockfile'
+
+# 使用 -l 标志使其成为登录 shell，这将加载 .bashrc 并正确设置 asdf
+RUN /bin/bash -l -c 'gem install bundler:2.3.6 && \
+    bundle install && \
+    yarn install --frozen-lockfile'
+
+# 步骤11：运行特定于应用的前端构建命令
+# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+#     yarn run webpack-prod'
+
+# 同样，使用 -l 标志来加载 asdf 环境
+RUN /bin/bash -l -c 'yarn run webpack-prod'
