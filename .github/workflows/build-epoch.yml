@@ -108,4 +108,4 @@ jobs:
           # file 指向我们仓库根目录下的 Dockerfile
           file: ./Dockerfile_epoch 
           push: true
-          tags: epoch-builder/gitlab:${{ matrix.epoch_version }}
+          tags: chenboyu12138/gitlab:${{ matrix.epoch_version }}
