@@ -45,16 +45,13 @@ RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf install'
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
-USER root
-RUN rm -f .dockerignore
-USER gitlab
 COPY --chown=gitlab:gitlab . .
 
 # 步骤9：验证vendor目录是否存在
-RUN echo "=== Checking vendor directory ===" && \
-    ls -la vendor/ && \
-    echo "=== Checking mail-smtp_pool ===" && \
-    ls -la vendor/gems/mail-smtp_pool/
+# RUN echo "=== Checking vendor directory ===" && \
+#     ls -la vendor/ && \
+#     echo "=== Checking mail-smtp_pool ===" && \
+#     ls -la vendor/gems/mail-smtp_pool/
 
 # 步骤10：安装应用依赖
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
