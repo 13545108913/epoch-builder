@@ -28,21 +28,21 @@ WORKDIR /home/gitlab
 
 # 步骤4：安装 ASDF 
 RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
-# 修复：使用 printf 而不是 'echo -e'，因为 /bin/sh (dash) 不支持 -e
-RUN printf "\n. %s" "$HOME/.asdf/asdf.sh" >> ~/.bashrc && \
-    printf "\n. %s" "$HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
+RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
+    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
 
-# 步骤5：添加插件 (修复：使用 -lic 强制加载 .bashrc)
-RUN /bin/bash -lic 'asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
+# 步骤5：添加插件
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
     asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf plugin add yarn'
 
 # 步骤6：利用Docker缓存。先只复制版本定义文件
-# ... 现有代码 ...
 COPY --chown=gitlab:gitlab .tool-versions .
 
-# 步骤7：安装精确的运行时 (修复：使用 -lic 强制加载 .bashrc)
-RUN /bin/bash -lic 'asdf install && asdf reshim'
+# 步骤7：安装精确的运行时
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf install'
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
@@ -54,18 +54,11 @@ COPY --chown=gitlab:gitlab . .
 #     ls -la vendor/gems/mail-smtp_pool/
 
 # 步骤10：安装应用依赖
-# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-# ... 现有代码 ...
-#     yarn install --frozen-lockfile'
-
-# 修复：使用 -lic 强制加载 .bashrc，并移除手动的 'source'
-RUN /bin/bash -lic 'gem install bundler:2.3.6 && \
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    gem install bundler:2.3.6 && \
     bundle install && \
     yarn install --frozen-lockfile'
 
 # 步骤11：运行特定于应用的前端构建命令
-# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-#     yarn run webpack-prod'
-
-# 修复：使用 -lic 强制加载 .bashrc，并移除手动的 'source'
-RUN /bin/bash -lic 'yarn run webpack-prod'
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    yarn run webpack-prod'
