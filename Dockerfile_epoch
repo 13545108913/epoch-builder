@@ -1,0 +1,67 @@
+# 步骤1：使用一个与"纪元"大致同时代的操作系统基础镜像
+FROM ubuntu:20.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# 步骤2：以root身份安装系统级构建依赖
+USER root
+RUN apt-get update && apt-get install -y \
+    build-essential autoconf bison patch rustc \
+    libssl-dev libyaml-dev libreadline6-dev zlib1g-dev \
+    libncurses5-dev libffi-dev libgdbm-dev libdb-dev uuid-dev \
+    curl git sudo dirmngr gawk \
+    pkg-config libmagic-dev \
+    tzdata \
+    libsqlite3-dev \
+    libre2-dev \
+    libkrb5-dev \
+    libpq-dev \
+    cmake \
+    libicu-dev
+
+# 步骤3：创建非root用户
+RUN useradd --create-home --shell /bin/bash gitlab && \
+    adduser gitlab sudo
+USER gitlab
+WORKDIR /home/gitlab
+
+# 步骤4：安装 ASDF 
+RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
+RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
+    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
+
+# 步骤5：添加插件
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
+    asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
+    asdf plugin add yarn'
+
+# 步骤6：利用Docker缓存。先只复制版本定义文件
+COPY --chown=gitlab:gitlab .tool-versions .
+
+# 步骤7：安装精确的运行时
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf install'
+
+# 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
+USER root
+RUN rm -f .dockerignore
+USER gitlab
+COPY --chown=gitlab:gitlab . .
+
+# 步骤9：验证vendor目录是否存在
+RUN echo "=== Checking vendor directory ===" && \
+    ls -la vendor/ && \
+    echo "=== Checking mail-smtp_pool ===" && \
+    ls -la vendor/gems/mail-smtp_pool/
+
+# 步骤10：安装应用依赖
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    gem install bundler:2.3.6 && \
+    bundle install && \
+    yarn install --frozen-lockfile'
+
+# 步骤11：运行特定于应用的前端构建命令
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    yarn run webpack-prod'
