@@ -51,6 +51,19 @@ jobs:
               echo "ruby 2.7.2" > .tool-versions
               echo "nodejs 12.22.1" >> .tool-versions
               echo "yarn 1.22.19" >> .tool-versions
+            # --- ⬇️ 您需要添加类似这样的块 ⬇️ ---
+            # 警告：请务必核实这些版本号是否正确！
+            elif [ "${{ matrix.epoch_version }}" = "v15.4.6" ]; then
+              echo "ruby 3.0.4" > .tool-versions
+              echo "nodejs 16.19.1" >> .tool-versions
+              echo "yarn 1.22.19" >> .tool-versions
+            
+            # 警告：请务必核实这些版本号是否正确！
+            elif [ "${{ matrix.epoch_version }}" = "v16.3.9" ]; then
+              echo "ruby 3.0.6" > .tool-versions
+              echo "nodejs 18.19.0" > .tool-versions
+              echo "yarn 1.22.19" >> .tool-versions
+            # --- ⬆️ 添加结束 ⬆️ ---
             else
               # 如果矩阵中添加了其他没有 .tool-versions 的版本，则构建将在此处失败
               echo "ERROR: No .tool-versions file found and no manual override for ${{ matrix.epoch_version }}"
