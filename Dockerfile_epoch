@@ -55,11 +55,21 @@ COPY --chown=gitlab:gitlab . .
 #     ls -la vendor/gems/mail-smtp_pool/
 
 # 步骤10：安装应用依赖
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+#     gem install bundler:2.3.6 && \
+#     bundle install && \
+#     yarn install --frozen-lockfile'
+
+RUN /bin/bash -c 'export PATH="$HOME/.asdf/shims:$HOME/.asdf/bin:$PATH" && \
+    source $HOME/.asdf/asdf.sh && \
     gem install bundler:2.3.6 && \
     bundle install && \
     yarn install --frozen-lockfile'
 
 # 步骤11：运行特定于应用的前端构建命令
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+# RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+#     yarn run webpack-prod'
+
+RUN /bin/bash -c 'export PATH="$HOME/.asdf/shims:$HOME/.asdf/bin:$PATH" && \
+    source $HOME/.asdf/asdf.sh && \
     yarn run webpack-prod'
