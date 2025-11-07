@@ -34,11 +34,8 @@ ENV PATH="/home/gitlab/.asdf/bin:/home/gitlab/.asdf/shims:${PATH}"
 ENV ASDF_DIR="/home/gitlab/.asdf"
 ENV ASDF_DATA_DIR="/home/gitlab/.asdf"
 
-# 将 ASDF 初始化添加到 shell 配置
-RUN echo '. $HOME/.asdf/asdf.sh' >> ~/.bashrc
-
 # 步骤5：添加插件
-RUN /bin/bash -c '. $HOME/.asdf/asdf.sh && \
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf plugin add ruby https://github.com/asdf-vm/asdf-ruby.git && \
     asdf plugin add nodejs https://github.com/asdf-vm/asdf-nodejs.git && \
     asdf plugin add yarn'
@@ -46,39 +43,47 @@ RUN /bin/bash -c '. $HOME/.asdf/asdf.sh && \
 # 步骤6：利用Docker缓存。先只复制版本定义文件
 COPY --chown=gitlab:gitlab .tool-versions .
 
-# 步骤7：安装精确的运行时并设置全局版本
-RUN /bin/bash -c '
-    source $HOME/.asdf/asdf.sh
-    asdf install
-    
-    # 从 .tool-versions 文件中提取版本号
-    RUBY_VERSION=$(grep "^ruby " .tool-versions | awk "{print \$2}")
-    NODE_VERSION=$(grep "^nodejs " .tool-versions | awk "{print \$2}")
-    
-    echo "Setting Ruby version to: $RUBY_VERSION"
-    echo "Setting Node.js version to: $NODE_VERSION"
-    
-    # 设置全局版本
-    asdf global ruby "$RUBY_VERSION"
-    asdf global nodejs "$NODE_VERSION"
-    
-    # 验证设置
-    echo "=== Current versions ==="
-    asdf current
-    
-    # 重新生成 shims
-    asdf reshim
-'
+# 步骤7：安装精确的运行时
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf install'
+
+# 
+# ⬇️⬇️⬇️ 在这里添加新步骤 ⬇️⬇️⬇️
+#
+# 新增步骤：设置全局版本
+# 这会读取 .tool-versions 文件并设置全局默认值，
+# 确保后续的 RUN 步骤能找到正确的 Ruby/NodeJS 版本。
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    echo "Setting global tool versions..." && \
+    asdf global ruby $(grep 'ruby' .tool-versions | awk '{print $2}') && \
+    asdf global nodejs $(grep 'nodejs' .tool-versions | awk '{print $2}') && \
+    echo "Global versions set:" && \
+    asdf current'
+# 
+# ⬆️⬆️⬆️ 添加新步骤完毕 ⬆️⬆️⬆️
+#
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
-# 步骤9：安装应用依赖
+# 在步骤10之前添加调试步骤
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    echo "=== Debugging ASDF environment ===" && \
+    echo "PATH: $PATH" && \
+    echo "Ruby version:" && asdf current ruby && \
+    echo "Node version:" && asdf current nodejs && \
+    which ruby && \
+    which gem && \
+    gem --version'
+
+# 步骤10：安装应用依赖
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf reshim ruby && \
     gem install bundler:2.3.6 && \
+    asdf reshim ruby && \
     bundle install && \
     yarn install --frozen-lockfile'
 
-# 步骤10：运行特定于应用的前端构建命令
+# 步骤11：运行特定于应用的前端构建命令
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     yarn run webpack-prod'
