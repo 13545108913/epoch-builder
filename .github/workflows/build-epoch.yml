@@ -11,7 +11,7 @@ jobs:
       fail-fast: false # 确保一个版本失败不会取消其他版本的构建
       matrix:
         # 定义所有纪元目标
-        epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6", "v16.3.9"]
+        epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6"]
 
     steps:
       - name: 登录到 Docker 镜像仓库
@@ -84,6 +84,18 @@ jobs:
             fi
             echo "Final .tool-versions:"
             cat .tool-versions
+          fi
+        shell: bash
+      
+      # --- 新增步骤：在构建前删除 .dockerignore ---
+      - name: 强制删除 .dockerignore (确保 vendor 等目录被复制)
+        run: |
+          DOCKERIGNORE_PATH="gitlab-src/.dockerignore"
+          if [ -f "$DOCKERIGNORE_PATH" ]; then
+            echo "Found .dockerignore at $DOCKERIGNORE_PATH. Removing it to ensure all files (like vendor/) are copied into the Docker build."
+            rm -f "$DOCKERIGNORE_PATH"
+          else
+            echo "No .dockerignore file found in gitlab-src, proceeding."
           fi
         shell: bash
 
