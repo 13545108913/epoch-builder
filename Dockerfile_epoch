@@ -28,8 +28,11 @@ WORKDIR /home/gitlab
 
 # 步骤4：安装 ASDF 
 RUN git clone https://github.com/asdf-vm/asdf.git $HOME/.asdf --branch v0.10.2
-RUN echo -e "\n. $HOME/.asdf/asdf.sh" >> ~/.bashrc && \
-    echo -e "\n. $HOME/.asdf/completions/asdf.bash" >> ~/.bashrc
+
+# 设置环境变量
+ENV PATH="/home/gitlab/.asdf/bin:/home/gitlab/.asdf/shims:${PATH}"
+ENV ASDF_DIR="/home/gitlab/.asdf"
+ENV ASDF_DATA_DIR="/home/gitlab/.asdf"
 
 # 步骤5：添加插件
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
@@ -47,15 +50,11 @@ RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
-# 步骤9：验证vendor目录是否存在
-# RUN echo "=== Checking vendor directory ===" && \
-#     ls -la vendor/ && \
-#     echo "=== Checking mail-smtp_pool ===" && \
-#     ls -la vendor/gems/mail-smtp_pool/
-
 # 步骤10：安装应用依赖
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    asdf reshim ruby && \
     gem install bundler:2.3.6 && \
+    asdf reshim ruby && \
     bundle install && \
     yarn install --frozen-lockfile'
 
