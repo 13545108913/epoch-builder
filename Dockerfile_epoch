@@ -50,6 +50,16 @@ RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
+# 在步骤10之前添加调试步骤
+RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
+    echo "=== Debugging ASDF environment ===" && \
+    echo "PATH: $PATH" && \
+    echo "Ruby version:" && asdf current ruby && \
+    echo "Node version:" && asdf current nodejs && \
+    which ruby && \
+    which gem && \
+    gem --version'
+
 # 步骤10：安装应用依赖
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     asdf reshim ruby && \
