@@ -11,7 +11,8 @@ jobs:
       fail-fast: false # 确保一个版本失败不会取消其他版本的构建
       matrix:
         # 定义所有纪元目标
-        epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6"]
+        # epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6"]
+        epoch_version: ["v16.3.9"]
 
     steps:
       - name: 登录到 Docker 镜像仓库
