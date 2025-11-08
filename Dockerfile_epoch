@@ -40,29 +40,13 @@ RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
 # 步骤6：利用Docker缓存。先只复制版本定义文件
 COPY --chown=gitlab:gitlab .tool-versions .
 
-# 步骤7：安装精确的运行时
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && asdf install'
-
-# 步骤7.1：设置各工具版本
+# 步骤7：安装精确的运行时并设置版本
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf global ruby $(cat .tool-versions | grep ruby | cut -d" " -f2)'
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf global nodejs $(cat .tool-versions | grep nodejs | cut -d" " -f2)'
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf global yarn $(cat .tool-versions | grep yarn | cut -d" " -f2)'
-
-# 步骤7.2：刷新 shims
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && asdf reshim'
-
-# 步骤7.3：验证安装
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    echo "=== Installed Versions ===" && \
-    asdf current && \
-    echo "=== Command Availability ===" && \
-    ruby --version && \
-    gem --version && \
-    node --version && \
-    yarn --version'
+    asdf install && \
+    cat .tool-versions | while read tool version; do \
+        asdf global $$tool $$version; \
+    done && \
+    asdf reshim'
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
