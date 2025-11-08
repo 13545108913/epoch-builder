@@ -40,31 +40,18 @@ RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
 # 步骤6：利用Docker缓存。先只复制版本定义文件
 COPY --chown=gitlab:gitlab .tool-versions .
 
-# 步骤7：安装精确的运行时并设置版本
+# 步骤7：安装精确的运行时
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    asdf install && \
-    cat .tool-versions | while read tool version; do \
-        asdf global $$tool $$version; \
-    done && \
-    asdf reshim'
+    asdf install'
 
 # 步骤8：修改.dockerignore以包含vendor目录，然后复制代码
 COPY --chown=gitlab:gitlab . .
 
-# 步骤9：验证环境
-RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
-    echo "=== ASDF Current Versions ===" && \
-    asdf current && \
-    echo "=== Command Locations ===" && \
-    which ruby && \
-    which gem && \
-    which bundle && \
-    which node && \
-    which yarn && \
-    echo "=== Versions ===" && \
-    ruby --version && \
-    node --version && \
-    yarn --version'
+# 步骤9：验证vendor目录是否存在
+# RUN echo "=== Checking vendor directory ===" && \
+#     ls -la vendor/ && \
+#     echo "=== Checking mail-smtp_pool ===" && \
+#     ls -la vendor/gems/mail-smtp_pool/
 
 # 步骤10：安装应用依赖
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
