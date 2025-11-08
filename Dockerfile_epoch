@@ -57,7 +57,7 @@ COPY --chown=gitlab:gitlab . .
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
     gem install bundler:2.3.6 && \
     bundle install && \
-    yarn install --frozen-lockfile'
+    yarn install --frozen-lockfile --registry https://registry.npmjs.org'
 
 # 步骤11：运行特定于应用的前端构建命令
 RUN /bin/bash -c 'source $HOME/.asdf/asdf.sh && \
