@@ -11,8 +11,7 @@ jobs:
       fail-fast: false # 确保一个版本失败不会取消其他版本的构建
       matrix:
         # 定义所有纪元目标
-        # epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6"]
-        epoch_version: ["v16.3.9"]
+        epoch_version: ["v13.12.15", "v14.10.5", "v15.4.6", "v16.3.9"]
 
     steps:
       - name: 登录到 Docker 镜像仓库
@@ -88,13 +87,20 @@ jobs:
           fi
         shell: bash
       
-      # --- 新增步骤：在构建前删除 .dockerignore ---
-      - name: 强制删除 .dockerignore (确保 vendor 等目录被复制)
+      # --- 修改步骤：在构建前从 .dockerignore 中删除特定条目 ---
+      - name: 修改 .dockerignore (确保关键目录被复制)
         run: |
-          DOCKERIGNORE_PATH="gitlab-src/.dockerignore"
+          DOCKERIGNORE_PATH=".dockerignore"
           if [ -f "$DOCKERIGNORE_PATH" ]; then
-            echo "Found .dockerignore at $DOCKERIGNORE_PATH. Removing it to ensure all files (like vendor/) are copied into the Docker build."
-            rm -f "$DOCKERIGNORE_PATH"
+            echo "Found .dockerignore. Removing specific entries to ensure they are copied into the Docker build."
+            # 删除 vendor, app, config, public, bin 及其子目录的忽略规则
+            # 使用 sed 匹配以可选 '/' 开头，后跟目录名，再接可选 '/' 或 '/.*' 的行
+            sed -i -E '\#^/?(vendor|app|config|public|bin)($|/.*)#d' "$DOCKERIGNORE_PATH"
+            # 删除 package.json 和 yarn.lock 的忽略规则
+            sed -i -E '\#^/?(package\.json|yarn\.lock)$#d' "$DOCKERIGNORE_PATH"
+            
+            echo "Updated .dockerignore:"
+            cat "$DOCKERIGNORE_PATH"
           else
             echo "No .dockerignore file found in gitlab-src, proceeding."
           fi
