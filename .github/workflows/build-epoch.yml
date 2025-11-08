@@ -90,7 +90,8 @@ jobs:
       # --- 修改步骤：在构建前从 .dockerignore 中删除特定条目 ---
       - name: 修改 .dockerignore (确保关键目录被复制)
         run: |
-          if [ -f .dockerignore ]; then
+          DOCKERIGNORE_PATH="gitlab-src/.dockerignore"
+          if [ -f "$DOCKERIGNORE_PATH" ]; then
             echo "Found .dockerignore. Removing specific entries to ensure they are copied into the Docker build."
             # 删除 vendor, app, config, public, bin 及其子目录的忽略规则
             # 使用 sed 匹配以可选 '/' 开头，后跟目录名，再接可选 '/' 或 '/.*' 的行
