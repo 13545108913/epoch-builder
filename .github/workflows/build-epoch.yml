@@ -61,7 +61,7 @@ jobs:
             
             # 警告：请务必核实这些版本号是否正确！
             elif [ "${{ matrix.epoch_version }}" = "v16.3.9" ]; then
-              echo "ruby 3.0.6" > .tool-versions
+              echo "ruby 3.0.4" > .tool-versions
               echo "nodejs 18.19.0" > .tool-versions
               echo "yarn 1.22.19" >> .tool-versions
             # --- ⬆️ 添加结束 ⬆️ ---
